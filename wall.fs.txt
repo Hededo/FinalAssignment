@@ -1,0 +1,91 @@
+#version 410 core
+
+// Output
+layout (location = 0) out vec4 color;
+
+// Matrices we'll need
+layout (std140) uniform constants
+{
+    mat4 mv_matrix;		
+	mat4 model_matrix;												
+	mat4 view_matrix;	
+	mat4 proj_matrix;
+	vec4 uni_color;		
+	vec4 light_pos;									     		
+	vec4 useUniformColor;	
+	vec4 invertNormals;
+	vec4 colorPercent;
+};
+
+// Input from vertex shader
+in VS_OUT
+{
+    vec3 N;
+    vec3 L;
+    vec3 V;
+	vec3 color;
+	vec2 tc;
+} fs_in;
+
+// Material properties
+uniform vec3 diffuse_albedo = vec3(0.2, 0.2, 0.2);
+uniform vec3 specular_albedo = vec3(0.7);
+uniform float specular_power = 128.0;
+uniform vec3 ambient = vec3(0.2, 0.2, 0.2);
+
+uniform sampler2D colorTexture;
+uniform sampler2D normalTexture;
+
+void main(void)
+{
+    // Normalize the incoming N, L and V vectors
+
+    vec3 bumpNormal = texture2D(normalTexture, fs_in.tc).xyz;
+	vec3 vertexNormal = normalize(fs_in.N);
+
+	vec3 N = vec3(0,0,0);
+
+	float absX = abs(vertexNormal.x);
+	float absY = abs(vertexNormal.y);
+	float absZ = abs(vertexNormal.z);
+
+	if (absX == 1.0)
+	{
+		N = bumpNormal.zyx;
+		if (vertexNormal.x ==  -1.0)
+		{
+			N.x = -N.x;
+		}
+	}
+	else if (absY == 1.0)
+	{
+		N = bumpNormal.xzy;
+		if (vertexNormal.y ==  -1.0)
+		{
+			N.y = -N.y;
+		}
+	}
+	else if (absZ == 1.0)
+	{
+		N = bumpNormal.xyz;
+		if (vertexNormal.z ==  -1.0)
+		{
+			N.z = -N.z;
+		}
+	}
+
+	N = normalize((N - 0.5) * 2);
+
+    vec3 L = normalize(fs_in.L);
+    vec3 V = normalize(fs_in.V);
+
+    // Calculate R locally
+    vec3 R = reflect(-L, N);
+
+    // Compute the diffuse and specular components for each fragment
+    vec3 diffuse = max(dot(N, L), 0.0) * diffuse_albedo;
+    vec3 specular = pow(max(dot(R, V), 0.0), specular_power) * specular_albedo;
+
+	color = vec4( (ambient + diffuse + specular) * texture2D(colorTexture, fs_in.tc).xyz, 1.0); //The one I want
+	//color = vec4( vertexNormal, 1.0);
+}

@@ -1,0 +1,55 @@
+#version 410 core
+
+layout (location = 0) out vec4 color;
+
+// Input from vertex shader
+in VS_OUT
+{
+    vec3 N;
+    vec3 L;
+    vec3 V;
+	vec3 color;
+} fs_in;
+
+struct ToonColors
+{
+	vec4 c0;
+	vec4 c1;
+	vec4 c2;
+	vec4 c3;
+	vec4 c4;
+	vec4 c5;
+};
+
+void main(void)
+{
+	ToonColors colors = ToonColors(
+	vec4(0.0, 0.0, 0.0, 1.0),
+	vec4(0.3, 0.0, 0.0, 1.0),
+	vec4(0.6, 0.0, 0.0, 1.0),
+	vec4(1.0, 0.0, 0.0, 1.0),
+	vec4(1.0, 0.5, 0.5, 1.0),
+	vec4(1.0, 1.0, 1.0, 1.0)
+	);	
+
+    // Calculate per-pixel normal and light vector
+    vec3 N = normalize(fs_in.N);
+    vec3 L = normalize(fs_in.L);
+
+	float pi = 3.14;
+
+	float nDotV = dot (N, L);
+
+    float radians = acos( abs(nDotV) );
+	float degrees = radians * (180.0 / pi);
+
+	if (degrees <= 10 && degrees >= 0)
+	{
+		color = colors.c0;
+	}
+	else 
+	{
+		color = colors.c1;
+	}
+	color = vec4(-N);
+}
