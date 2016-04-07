@@ -1,0 +1,32 @@
+#version 410 core
+
+layout (location = 0) in vec4 position; 
+
+// Matrices we'll need
+layout (std140) uniform constants
+{
+    mat4 mv_matrix;		
+	mat4 model_matrix;												
+	mat4 view_matrix;												
+	mat4 proj_matrix;												
+	vec4 uni_color;		
+	vec4 light_pos;									     		
+	vec4 useUniformColor;	
+	vec4 invertNormals;
+	vec4 colorPercent;
+};
+
+out VS_OUT
+{
+    vec3    tc;
+} vs_out;
+
+void main(void)
+{
+
+	vec4 p = proj_matrix * mv_matrix * position;
+
+    vs_out.tc = position.xyz;
+
+    gl_Position = p;
+}

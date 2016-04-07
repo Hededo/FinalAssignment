@@ -273,6 +273,8 @@
     <Text Include="floor.vs.txt" />
     <Text Include="phong_perfragment.fs.txt" />
     <Text Include="phong_perfragment.vs.txt" />
+    <Text Include="skybox.fs.txt" />
+    <Text Include="skybox.vs.txt" />
     <Text Include="toon.fs.txt" />
     <Text Include="toon.vs.txt" />
     <Text Include="wall.fs.txt" />
@@ -284,6 +286,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FinalAssignment.cpp" />
+    <ClCompile Include="helperFunctions.cpp" />
     <ClCompile Include="lodepng.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

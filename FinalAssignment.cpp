@@ -1,3 +1,6 @@
+#ifndef _finalassignment_cpp
+#define _finalassignment_cpp
+
 #include <sb7.h>
 #include <vmath.h>
 
@@ -20,55 +23,6 @@
 #define DEPTH_TEXTURE_SIZE      4096
 #define FRUSTUM_DEPTH           1000
 
-void printShaderInfoLog(GLuint obj)
-{
-	int infologLength = 0;
-	int charsWritten = 0;
-	char *infoLog;
-
-	glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
-
-	if (infologLength > 0)
-	{
-		infoLog = (char *)malloc(infologLength);
-		glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-		//printf("%s\n", infoLog);
-		OutputDebugString(infoLog);
-		free(infoLog);
-	}
-}
-
-
-void printProgramInfoLog(GLuint obj)
-{
-	int infologLength = 0;
-	int charsWritten = 0;
-	char *infoLog;
-
-	glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
-
-	if (infologLength > 0)
-	{
-		infoLog = (char *)malloc(infologLength);
-		glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-		//printf("%s\n", infoLog);
-		OutputDebugString(infoLog);
-		free(infoLog);
-	}
-}
-
-
-
-static vmath::vec4 mult(vmath::mat4 m, vmath::vec4 v)
-{
-	return vmath::vec4(
-		v[0] * (m[0][0] + m[1][0] + m[2][0] + m[3][0]),
-		v[1] * (m[0][1] + m[1][1] + m[2][1] + m[3][1]),
-		v[2] * (m[0][2] + m[1][2] + m[2][2] + m[3][2]),
-		v[3] * (m[0][3] + m[1][3] + m[2][3] + m[3][3])
-		);
-}
-
 class final_app : public sb7::application
 {
 //Forward Declaration of Public functions
@@ -79,7 +33,8 @@ public:
 		floorProgram(0) ,
 		wallProgram(0),
 		toonProgram(0),
-		flatColorProgram(0)
+		flatColorProgram(0),
+		skybox_prog(0)
 	{
 	}
 #pragma endregion
@@ -117,11 +72,13 @@ protected:
 	GLuint          wallProgram;
 	GLuint          toonProgram;
 	GLuint          flatColorProgram;
+	GLuint          skybox_prog;
 
 	GLuint          tex_floor;
 	GLuint          tex_floor_normal;
 	GLuint          tex_brick;
 	GLuint          tex_brick_normal;
+	GLuint          tex_envmap;
 
 	GLuint          depthBuffer;
 	GLuint          depthTexture;
@@ -224,162 +181,54 @@ void final_app::startup()
 #pragma endregion
 
 #pragma region Load Textures
-	std::vector<unsigned char> floorImage;
-	std::string floorFilePath = "bin\\media\\textures\\sand.png";
+	unsigned * square_tex_width = new unsigned;
+	unsigned * square_tex_height = new unsigned;
 
-	unsigned floor_width, floor_height;
-	unsigned error = lodepng::decode(floorImage, floor_width, floor_height, floorFilePath);
-
-	if (error != 0)
-	{
-		std::cout << "error " << error << ": " << lodepng_error_text(error) << std::endl;
-		return;
-	}
-
-	// Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
-	size_t u2 = 1; while (u2 < floor_width) u2 *= 2;
-	size_t v2 = 1; while (v2 < floor_height) v2 *= 2;
-	// Ratio for power of two version compared to actual version, to render the non power of two image with proper size.
-	double u3 = (double)floor_width / u2;
-	double v3 = (double)floor_height / v2;
-
-	// Make power of two version of the image.
-	std::vector<unsigned char> floorTexture(u2 * v2 * 4);
-	for (size_t y = 0; y < floor_height; y++)
-		for (size_t x = 0; x < floor_width; x++)
-			for (size_t c = 0; c < 4; c++)
-			{
-				floorTexture[4 * u2 * y + 4 * x + c] = floorImage[4 * floor_width * y + 4 * x + c];
-			}
-
+	std::vector<unsigned char> texture_data = loadImageFromFile("bin\\media\\textures\\sand.png", square_tex_width, square_tex_height);
 	// Enable the texture for OpenGL.
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
-
 	// Generate a name for the texture
 	glGenTextures(1, &tex_floor); //GLuint tex_floor
 	// Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_floor); 
 	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, floor_width, floor_height);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, floor_width, floor_height, GL_RGBA, GL_UNSIGNED_BYTE, &floorTexture[0]);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+	//_______________________________________________________________________________________________________________
 
-	std::vector<unsigned char> floorNormalImage;
-	std::string floorNormalFilePath = "bin\\media\\textures\\floor_normal_map.png";
-
-	error = lodepng::decode(floorNormalImage, floor_width, floor_height, floorNormalFilePath);
-
-	if (error != 0)
-	{
-		std::cout << "error " << error << ": " << lodepng_error_text(error) << std::endl;
-		return;
-	}
-
-	// Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
-	u2 = 1; while (u2 < floor_width) u2 *= 2;
-	v2 = 1; while (v2 < floor_height) v2 *= 2;
-	// Ratio for power of two version compared to actual version, to render the non power of two image with proper size.
-	u3 = (double)floor_width / u2;
-	v3 = (double)floor_height / v2;
-
-	// Make power of two version of the image.
-	std::vector<unsigned char> floorNormalTexture(u2 * v2 * 4);
-	for (size_t y = 0; y < floor_height; y++)
-		for (size_t x = 0; x < floor_width; x++)
-			for (size_t c = 0; c < 4; c++)
-			{
-				floorNormalTexture[4 * u2 * y + 4 * x + c] = floorNormalImage[4 * floor_width * y + 4 * x + c];
-			}
-
-	// Enable the texture for OpenGL.
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
-
-																					  // Generate a name for the texture
+	texture_data = loadImageFromFile("bin\\media\\textures\\floor_normal_map.png", square_tex_width, square_tex_height);
+	// Generate a name for the texture
 	glGenTextures(1, &tex_floor_normal); //GLuint tex_floor_normal
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_floor_normal);
 	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, floor_width, floor_height);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, floor_width, floor_height, GL_RGBA, GL_UNSIGNED_BYTE, &floorNormalTexture[0]);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+	//_______________________________________________________________________________________________________________
 
-	std::vector<unsigned char> brickImage;
-	std::string brinkFilePath = "bin\\media\\textures\\AlternatingBrick-ColorMap.png";
+	texture_data = loadImageFromFile("bin\\media\\textures\\AlternatingBrick-ColorMap.png", square_tex_width, square_tex_height);
 
-	error = lodepng::decode(brickImage, floor_width, floor_height, brinkFilePath);
-
-	if (error != 0)
-	{
-		std::cout << "error " << error << ": " << lodepng_error_text(error) << std::endl;
-		return;
-	}
-
-	// Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
-	u2 = 1; while (u2 < floor_width) u2 *= 2;
-	v2 = 1; while (v2 < floor_height) v2 *= 2;
-	// Ratio for power of two version compared to actual version, to render the non power of two image with proper size.
-	u3 = (double)floor_width / u2;
-	v3 = (double)floor_height / v2;
-
-	// Make power of two version of the image.
-	std::vector<unsigned char> brickTexture(u2 * v2 * 4);
-	for (size_t y = 0; y < floor_height; y++)
-		for (size_t x = 0; x < floor_width; x++)
-			for (size_t c = 0; c < 4; c++)
-			{
-				brickTexture[4 * u2 * y + 4 * x + c] = brickImage[4 * floor_width * y + 4 * x + c];
-			}
-
-	// Enable the texture for OpenGL.
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
-
-																					  // Generate a name for the texture
 	glGenTextures(1, &tex_brick); //GLuint tex_brick
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_brick);
 	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, floor_width, floor_height);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, floor_width, floor_height, GL_RGBA, GL_UNSIGNED_BYTE, &brickTexture[0]);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+	//_______________________________________________________________________________________________________________
 
-	std::vector<unsigned char> brickNormalImage;
-	std::string brinkNormalFilePath = "bin\\media\\textures\\AlternatingBrick-NormalMap.png";
+	texture_data = loadImageFromFile("bin\\media\\textures\\AlternatingBrick-NormalMap.png", square_tex_width, square_tex_height);
 
-	error = lodepng::decode(brickNormalImage, floor_width, floor_height, brinkNormalFilePath);
-
-	if (error != 0)
-	{
-		std::cout << "error " << error << ": " << lodepng_error_text(error) << std::endl;
-		return;
-	}
-
-	// Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
-	u2 = 1; while (u2 < floor_width) u2 *= 2;
-	v2 = 1; while (v2 < floor_height) v2 *= 2;
-	// Ratio for power of two version compared to actual version, to render the non power of two image with proper size.
-	u3 = (double)floor_width / u2;
-	v3 = (double)floor_height / v2;
-
-	// Make power of two version of the image.
-	std::vector<unsigned char> brickNormalTexture(u2 * v2 * 4);
-	for (size_t y = 0; y < floor_height; y++)
-		for (size_t x = 0; x < floor_width; x++)
-			for (size_t c = 0; c < 4; c++)
-			{
-				brickNormalTexture[4 * u2 * y + 4 * x + c] = brickNormalImage[4 * floor_width * y + 4 * x + c];
-			}
-
-	// Enable the texture for OpenGL.
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
-
-																					  // Generate a name for the texture
 	glGenTextures(1, &tex_brick_normal); //GLuint tex_brick
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_brick_normal);
 	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, floor_width, floor_height);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, floor_width, floor_height, GL_RGBA, GL_UNSIGNED_BYTE, &brickNormalTexture[0]);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+	//_______________________________________________________________________________________________________________
 
 #pragma endregion
 
@@ -676,6 +525,14 @@ void final_app::load_shaders()
 	glAttachShader(flatColorProgram, vs);
 	glAttachShader(flatColorProgram, fs);
 	glLinkProgram(flatColorProgram);
+
+	vs = sb7::shader::load("skybox.vs.txt", GL_VERTEX_SHADER);
+	fs = sb7::shader::load("skybox.fs.txt", GL_FRAGMENT_SHADER);
+
+	skybox_prog = glCreateProgram();
+	glAttachShader(skybox_prog, vs);
+	glAttachShader(skybox_prog, fs);
+	glLinkProgram(skybox_prog);
 }
 
 #pragma region Event Handlers
@@ -793,3 +650,5 @@ vmath::vec3 final_app::getArcballVector(int x, int y) {
 #pragma endregion
 
 DECLARE_MAIN(final_app)
+
+#endif

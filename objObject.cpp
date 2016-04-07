@@ -1,3 +1,6 @@
+#ifndef _objobject_cpp
+#define _objobject_cpp
+
 #pragma once
 
 //libraries go here:
@@ -6,35 +9,7 @@
 #include <string>
 #include <vector>
 #include <cctype>
-
-std::vector<int> IntsInString(std::string str)
-{
-	std::vector<int> toReturn;
-	std::string intAsString = "";
-
-	for (char& c : str)
-	{
-		if (std::isdigit(c))
-		{
-			intAsString += c;
-		}
-		else
-		{
-			if (intAsString != "")
-			{
-				toReturn.push_back(std::stoi(intAsString));
-			}
-			intAsString = "";
-		}
-	}
-
-	if (intAsString != "")
-	{
-		toReturn.push_back(std::stoi(intAsString));
-	}
-
-	return toReturn;
-}
+#include "helperFunctions.cpp"
 
 class ObjObject
 {
@@ -279,3 +254,5 @@ private:
 
 	}
 };
+
+#endif
