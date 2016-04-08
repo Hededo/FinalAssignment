@@ -78,7 +78,7 @@ protected:
 	GLuint          tex_floor_normal;
 	GLuint          tex_brick;
 	GLuint          tex_brick_normal;
-	GLuint          tex_envmap;
+	GLuint          tex_skybox;
 
 	GLuint          depthBuffer;
 	GLuint          depthTexture;
@@ -230,6 +230,20 @@ void final_app::startup()
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
 	//_______________________________________________________________________________________________________________
 
+	texture_data = loadImageFromFile("bin\\media\\textures\\skybox.png", square_tex_width, square_tex_height);
+
+	glGenTextures(1, &tex_skybox); //GLuint tex_brick
+										 // Now bind it to the context using the GL_TEXTURE_2D binding point
+	glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
+	// Specify the amount of storage we want to use for the texture
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
+	// Assume the texture is already bound to the GL_TEXTURE_2D target
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+
+	//GIVING UP
+	tex_skybox = sb7::ktx::file::load("mountaincube.ktx");
+	//_______________________________________________________________________________________________________________
+
 #pragma endregion
 
 #pragma region OPENGL Settings
@@ -321,17 +335,13 @@ void final_app::render(double currentTime)
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
 	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
 
-	GLint tex_brick_location = glGetUniformLocation(wallProgram, "colorTexture");
-	GLint bump_tex_location = glGetUniformLocation(wallProgram, "normalTexture");
+	GLint skybox_location = glGetUniformLocation(skybox_prog, "tex_cubemap");
 
-	glUseProgram(wallProgram);
-	glUniform1i(tex_brick_location, 1);
-	glUniform1i(bump_tex_location, 0);
-
-	glBindTexture(GL_TEXTURE_2D, tex_brick);
-	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
-	glBindTexture(GL_TEXTURE_2D, tex_brick_normal);
-	glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
+	glUseProgram(skybox_prog);
+	glUniform1i(skybox_location, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     vmath::mat4 model_matrix = vmath::scale(30.0f);
 	block->model_matrix = model_matrix;
@@ -528,6 +538,11 @@ void final_app::load_shaders()
 
 	vs = sb7::shader::load("skybox.vs.txt", GL_VERTEX_SHADER);
 	fs = sb7::shader::load("skybox.fs.txt", GL_FRAGMENT_SHADER);
+
+	if (skybox_prog)
+	{
+		glDeleteProgram(skybox_prog);
+	}
 
 	skybox_prog = glCreateProgram();
 	glAttachShader(skybox_prog, vs);

@@ -1,14 +1,17 @@
 #version 410 core
 
-layout (location = 0) in vec4 position; 
+layout (location = 0) in vec4 position;                        
+layout (location = 1) in vec4 normal;
+layout (location = 2) in vec4 attributeColor;  
+layout (location = 3) in vec4 textureCoordinate;  
 
 // Matrices we'll need
 layout (std140) uniform constants
 {
     mat4 mv_matrix;		
 	mat4 model_matrix;												
-	mat4 view_matrix;												
-	mat4 proj_matrix;												
+	mat4 view_matrix;	
+	mat4 proj_matrix;
 	vec4 uni_color;		
 	vec4 light_pos;									     		
 	vec4 useUniformColor;	
@@ -26,7 +29,7 @@ void main(void)
 
 	vec4 p = proj_matrix * mv_matrix * position;
 
-    vs_out.tc = position.xyz;
+    vs_out.tc = textureCoordinate.xyz; //position.xyz;
 
     gl_Position = p;
 }
