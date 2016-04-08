@@ -76,8 +76,6 @@ protected:
 
 	GLuint          tex_floor;
 	GLuint          tex_floor_normal;
-	GLuint          tex_brick;
-	GLuint          tex_brick_normal;
 	GLuint          tex_skybox;
 
 	GLuint          depthBuffer;
@@ -184,7 +182,7 @@ void final_app::startup()
 	unsigned * square_tex_width = new unsigned;
 	unsigned * square_tex_height = new unsigned;
 
-	std::vector<unsigned char> texture_data = loadImageFromFile("bin\\media\\textures\\sand.png", square_tex_width, square_tex_height);
+	std::vector<unsigned char> texture_data = loadImageFromFile("bin\\media\\textures\\GraniteWall-ColorMap.png", square_tex_width, square_tex_height);
 	// Enable the texture for OpenGL.
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
 	// Generate a name for the texture
@@ -196,8 +194,7 @@ void final_app::startup()
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
 	//_______________________________________________________________________________________________________________
-
-	texture_data = loadImageFromFile("bin\\media\\textures\\floor_normal_map.png", square_tex_width, square_tex_height);
+	texture_data = loadImageFromFile("bin\\media\\textures\\GraniteWall-NormalMap.png", square_tex_width, square_tex_height);
 	// Generate a name for the texture
 	glGenTextures(1, &tex_floor_normal); //GLuint tex_floor_normal
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
@@ -207,41 +204,7 @@ void final_app::startup()
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
 	//_______________________________________________________________________________________________________________
-
-	texture_data = loadImageFromFile("bin\\media\\textures\\AlternatingBrick-ColorMap.png", square_tex_width, square_tex_height);
-
-	glGenTextures(1, &tex_brick); //GLuint tex_brick
-								  // Now bind it to the context using the GL_TEXTURE_2D binding point
-	glBindTexture(GL_TEXTURE_2D, tex_brick);
-	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
-	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
-	//_______________________________________________________________________________________________________________
-
-	texture_data = loadImageFromFile("bin\\media\\textures\\AlternatingBrick-NormalMap.png", square_tex_width, square_tex_height);
-
-	glGenTextures(1, &tex_brick_normal); //GLuint tex_brick
-								  // Now bind it to the context using the GL_TEXTURE_2D binding point
-	glBindTexture(GL_TEXTURE_2D, tex_brick_normal);
-	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
-	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
-	//_______________________________________________________________________________________________________________
-
-	texture_data = loadImageFromFile("bin\\media\\textures\\skybox.png", square_tex_width, square_tex_height);
-
-	glGenTextures(1, &tex_skybox); //GLuint tex_brick
-										 // Now bind it to the context using the GL_TEXTURE_2D binding point
-	glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
-	// Specify the amount of storage we want to use for the texture
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
-	// Assume the texture is already bound to the GL_TEXTURE_2D target
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
-
-	//GIVING UP
-	tex_skybox = sb7::ktx::file::load("mountaincube.ktx");
+	tex_skybox = sb7::ktx::file::load("bin\\media\\textures\\mountaincube.ktx");
 	//_______________________________________________________________________________________________________________
 
 #pragma endregion
@@ -250,6 +213,7 @@ void final_app::startup()
     glFrontFace(GL_CW); //glFrontFace(GLenum mode) In a scene composed entirely of opaque closed surfaces, back-facing polygons are never visible.
 	glEnable(GL_DEPTH_TEST); //glEnable(GLenum cap) glEnable and glDisable enable and disable various capabilities.
 	glDepthFunc(GL_LEQUAL);	//glDepthFunc(GLenum func) specifies the function used to compare each incoming pixel depth value with the depth value present in the depth buffer. 
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #pragma endregion
 }
 
@@ -339,11 +303,12 @@ void final_app::render(double currentTime)
 
 	glUseProgram(skybox_prog);
 	glUniform1i(skybox_location, 0);
+
 	glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    vmath::mat4 model_matrix = vmath::scale(30.0f);
+    vmath::mat4 model_matrix = vmath::scale(250.0f);
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;

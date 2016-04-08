@@ -29,7 +29,7 @@ void main(void)
 
 	vec4 p = proj_matrix * mv_matrix * position;
 
-    vs_out.tc = textureCoordinate.xyz; //position.xyz;
+    vs_out.tc = position.xyz; //textureCoordinate.xyz;
 
     gl_Position = p;
 }
