@@ -291,6 +291,7 @@
     <ClCompile Include="FinalAssignment.cpp" />
     <ClCompile Include="helperFunctions.cpp" />
     <ClCompile Include="lodepng.cpp" />
+    <ClCompile Include="particles.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

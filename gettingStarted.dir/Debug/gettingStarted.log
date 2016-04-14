@@ -1,2 +1,30 @@
 ﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (gettingStarted.dir\Debug\) contains files shared from another project (Assignment1.vcxproj, Assignment3.vcxproj, Assignment4.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  gettingStarted.vcxproj -> D:\Local Docs\Code\CS 5610\FinalAssignment\bin\gettingStarted_d.exe
+  FinalAssignment.cpp
+C:\VersionedCode\Final\include\vmath.h(1022): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(134): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(135): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(136): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(137): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(138): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(139): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(143): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(144): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(145): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(146): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(147): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(148): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(149): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(150): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(151): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\versionedcode\final\objObject.cpp(162): warning C4018: '<': signed/unsigned mismatch
+c:\versionedcode\final\objObject.cpp(164): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+c:\versionedcode\final\objObject.cpp(173): warning C4018: '<': signed/unsigned mismatch
+c:\versionedcode\final\objObject.cpp(175): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+c:\versionedcode\final\objObject.cpp(183): warning C4018: '<': signed/unsigned mismatch
+c:\versionedcode\final\objObject.cpp(185): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+c:\versionedcode\final\objObject.cpp(98): warning C4101: 'vertexIndex': unreferenced local variable
+c:\versionedcode\final\objObject.cpp(98): warning C4101: 'normalIndex': unreferenced local variable
+  particles.cpp
+C:\VersionedCode\Final\include\vmath.h(1022): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Generating Code...
+  gettingStarted.vcxproj -> C:\VersionedCode\Final\bin\gettingStarted_d.exe

@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 
+#include "particles.cpp"
 #include "objObject.cpp"
 #include "lodepng.h"
 
@@ -135,7 +136,15 @@ ObjObject * cube;
 ObjObject * sphere;
 ObjObject * teapot;
 ObjObject * quad;
+ObjObject * humvee;
 
+#pragma endregion
+
+#pragma region Particle Vars
+int * LastUsedParticle = 0;
+
+int MaxParticles = 100000;
+Particle * ParticlesContainer;
 #pragma endregion
 
 #pragma endregion
@@ -160,7 +169,6 @@ private:
 	vmath::vec4 initalLightPos = vmath::vec4(10.0f, 20.0f, -3.0f, 1.0f);
 	vmath::vec3 lightPosOffset = vmath::vec3(0, 0, 0);
 
-
 #pragma endregion
 };
 
@@ -172,6 +180,7 @@ void final_app::startup()
 	sphere = new ObjObject("bin\\media\\objects\\sphere.obj");
 	teapot = new ObjObject("bin\\media\\objects\\wt_teapot.obj");
 	quad = new ObjObject("bin\\media\\objects\\quad.obj");
+	humvee = new ObjObject("bin\\media\\objects\\humvee.obj");
 
 #pragma region Buffer For Uniform Block
 	glGenBuffers(1, &uniforms_buffer);
@@ -227,6 +236,10 @@ void final_app::startup()
 	glEnable(GL_DEPTH_TEST); //glEnable(GLenum cap) glEnable and glDisable enable and disable various capabilities.
 	glDepthFunc(GL_LEQUAL);	//glDepthFunc(GLenum func) specifies the function used to compare each incoming pixel depth value with the depth value present in the depth buffer. 
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+#pragma endregion
+
+#pragma region Particle Init
+	ParticlesContainer = new Particle[MaxParticles];
 #pragma endregion
 }
 
@@ -455,6 +468,7 @@ void final_app::render(double currentTime)
 	cube->Draw();
 #pragma endregion
 
+
 #pragma region Point Sprite
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
 	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
@@ -476,6 +490,10 @@ void final_app::render(double currentTime)
 	glCullFace(GL_FRONT);
     glDrawArrays(GL_POINTS, 0, 1);
 
+#pragma endregion
+
+#pragma region Particles
+	int newparticles = (int)(f*10000.0);
 #pragma endregion
 }
 
