@@ -472,7 +472,7 @@ void final_app::render(double currentTime)
 
 	glUseProgram(point_prog);
 
-	glPointSize(20.0f);
+	glPointSize(40.0f);
 	glCullFace(GL_FRONT);
     glDrawArrays(GL_POINTS, 0, 1);
 
@@ -483,6 +483,7 @@ void final_app::load_shaders()
 {
 	GLuint vs;
 	GLuint fs;
+	GLuint gs;
 
 	vs = sb7::shader::load("phong_perfragment.vs.txt", GL_VERTEX_SHADER);
 	printShaderInfoLog(vs);
@@ -567,14 +568,17 @@ void final_app::load_shaders()
 	glLinkProgram(skybox_prog);
 
 	vs = sb7::shader::load("point.vs.txt", GL_VERTEX_SHADER);
+	gs = sb7::shader::load("point.gs.txt", GL_GEOMETRY_SHADER);
 	fs = sb7::shader::load("point.fs.txt", GL_FRAGMENT_SHADER);
 
 	point_prog = glCreateProgram();
 	glAttachShader(point_prog, vs);
+	glAttachShader(point_prog, gs);
 	glAttachShader(point_prog, fs);
 	glLinkProgram(point_prog);
 
 	glDeleteShader(vs);
+	glDeleteShader(gs);
 	glDeleteShader(fs);
 }
 
