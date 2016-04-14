@@ -34,7 +34,8 @@ public:
 		wallProgram(0),
 		toonProgram(0),
 		flatColorProgram(0),
-		skybox_prog(0)
+		skybox_prog(0),
+		point_prog(0)
 	{
 	}
 #pragma endregion
@@ -73,10 +74,12 @@ protected:
 	GLuint          toonProgram;
 	GLuint          flatColorProgram;
 	GLuint          skybox_prog;
+	GLuint          point_prog;
 
 	GLuint          tex_floor;
 	GLuint          tex_floor_normal;
 	GLuint          tex_skybox;
+	GLuint          tex_particle;
 
 	GLuint          depthBuffer;
 	GLuint          depthTexture;
@@ -154,10 +157,8 @@ private:
 	float fZpos = 75.0f;
 
 	// Initial light pos
-	vmath::vec4 initalLightPos = vmath::vec4(1.0f, 1.0f, -3.0f, 1.0f);
+	vmath::vec4 initalLightPos = vmath::vec4(10.0f, 20.0f, -3.0f, 1.0f);
 	vmath::vec3 lightPosOffset = vmath::vec3(0, 0, 0);
-
-	bool toonShading = false;
 
 
 #pragma endregion
@@ -206,6 +207,18 @@ void final_app::startup()
 	//_______________________________________________________________________________________________________________
 	tex_skybox = sb7::ktx::file::load("bin\\media\\textures\\mountaincube.ktx");
 	//_______________________________________________________________________________________________________________
+	//texture_data = loadImageFromFile("bin\\media\\textures\\particle.png", square_tex_width, square_tex_height);
+	texture_data = loadImageFromFile("bin\\media\\textures\\pikachu.png", square_tex_width, square_tex_height);
+	// Enable the texture for OpenGL.
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
+																					  // Generate a name for the texture
+	glGenTextures(1, &tex_particle); //GLuint tex_floor
+								  // Now bind it to the context using the GL_TEXTURE_2D binding point
+	glBindTexture(GL_TEXTURE_2D, tex_particle);
+	// Specify the amount of storage we want to use for the texture
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
+	// Assume the texture is already bound to the GL_TEXTURE_2D target
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
 
 #pragma endregion
 
@@ -320,7 +333,7 @@ void final_app::render(double currentTime)
 	cube->Draw();
 #pragma endregion
 
-#pragma region Draw Stand
+#pragma region Fountain Base Stand
 	cube->BindBuffers();
 
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -330,8 +343,8 @@ void final_app::render(double currentTime)
 	glUseProgram(per_fragment_program);
 
 	model_matrix =
-		vmath::translate(-10.0f, -25.0f, -5.0f) *
-		vmath::scale(5.0f);
+		vmath::translate(0.0f, -18.0f, -5.0f) *
+		vmath::scale(12.0f);
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
@@ -343,6 +356,51 @@ void final_app::render(double currentTime)
 	glCullFace(GL_BACK);
 	cube->Draw();
 #pragma endregion
+
+#pragma region Fountain Middle Stand
+
+	sphere->BindBuffers();
+
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+	glUseProgram(per_fragment_program);
+
+	model_matrix =
+		vmath::translate(0.0f, -4.0f, -5.0f) *
+		vmath::scale(11.0f);
+	block->model_matrix = model_matrix;
+	block->mv_matrix = view_matrix * model_matrix;
+	block->view_matrix = view_matrix;
+	block->uni_color = purple;
+
+	sphere->Draw();
+
+#pragma endregion
+
+#pragma region Fountain Top
+
+	cube->BindBuffers();
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+
+	glUseProgram(per_fragment_program);
+
+	model_matrix =
+		vmath::translate(0.0f, 7.0f, -5.0f) *
+		vmath::scale(5.0f);
+	block->model_matrix = model_matrix;
+	block->mv_matrix = view_matrix * model_matrix;
+	block->view_matrix = view_matrix;
+	block->uni_color = orange;
+	block->useUniformColor = trueVec;
+	block->invertNormals = falseVec;
+
+	cube->Draw();
+#pragma endregion
+
+
 
 #pragma region Draw Light Source
 	sphere->BindBuffers();
@@ -359,35 +417,6 @@ void final_app::render(double currentTime)
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
 	block->uni_color = white;
-	block->useUniformColor = trueVec;
-	block->invertNormals = falseVec;
-
-	sphere->Draw();
-#pragma endregion
-
-#pragma region Draw Sphere
-
-	sphere->BindBuffers();
-	glUnmapBuffer(GL_UNIFORM_BUFFER);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
-	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
-
-	if (toonShading)
-	{
-		glUseProgram(toonProgram);
-	}
-	else
-	{
-		glUseProgram(per_fragment_program);
-	}
-
-	model_matrix =
-		vmath::translate(-10.0f, -15.0f, -5.0f) * 
-		vmath::scale(5.0f);
-	block->model_matrix = model_matrix;
-	block->mv_matrix = view_matrix * model_matrix;
-	block->view_matrix = view_matrix;
-	block->uni_color = purple;
 	block->useUniformColor = trueVec;
 	block->invertNormals = falseVec;
 
@@ -415,7 +444,7 @@ void final_app::render(double currentTime)
 
 	model_matrix =
 		vmath::translate(0.0f, -30.0f, 0.0f) *
-		vmath::scale(30.0f, 1.0f, 30.0f);
+		vmath::scale(40.0f, 1.0f, 40.0f);
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
@@ -424,6 +453,29 @@ void final_app::render(double currentTime)
 	block->invertNormals = falseVec;
 
 	cube->Draw();
+#pragma endregion
+
+#pragma region Point Sprite
+	glBindTexture(GL_TEXTURE_2D, tex_particle);
+	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+	glBindTexture(GL_TEXTURE_2D, tex_particle);
+	glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
+
+	glUnmapBuffer(GL_UNIFORM_BUFFER); //release the mapping of a buffer object's data store into the client's address space
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+
+	model_matrix = vmath::translate(25.0f, 10.0f, -40.0f);
+	block->model_matrix = model_matrix;
+	block->mv_matrix = view_matrix * model_matrix;
+	block->view_matrix = view_matrix;
+
+	glUseProgram(point_prog);
+
+	glPointSize(20.0f);
+	glCullFace(GL_FRONT);
+    glDrawArrays(GL_POINTS, 0, 1);
+
 #pragma endregion
 }
 
@@ -513,6 +565,17 @@ void final_app::load_shaders()
 	glAttachShader(skybox_prog, vs);
 	glAttachShader(skybox_prog, fs);
 	glLinkProgram(skybox_prog);
+
+	vs = sb7::shader::load("point.vs.txt", GL_VERTEX_SHADER);
+	fs = sb7::shader::load("point.fs.txt", GL_FRAGMENT_SHADER);
+
+	point_prog = glCreateProgram();
+	glAttachShader(point_prog, vs);
+	glAttachShader(point_prog, fs);
+	glLinkProgram(point_prog);
+
+	glDeleteShader(vs);
+	glDeleteShader(fs);
 }
 
 #pragma region Event Handlers
@@ -535,11 +598,7 @@ void final_app::onKey(int key, int action)
 			fXpos = 0.0f;
 			fYpos = 0.0f;
 			fZpos = 75.0f;
-			toonShading = false;
 			lightPosOffset = vmath::vec3(0, 0, 0);
-			break;
-		case 'T':
-			toonShading = !toonShading;
 			break;
 		case '1':
 			lightPosOffset[0] += 1;

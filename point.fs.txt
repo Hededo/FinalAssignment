@@ -1,0 +1,10 @@
+#version 410 core
+
+out vec4 color;                              
+
+uniform sampler2D billboardTex;
+
+void main(void)                               
+{                        
+	color = texture(billboardTex, gl_PointCoord);                     
+}                                             

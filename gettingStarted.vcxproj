@@ -273,6 +273,9 @@
     <Text Include="floor.vs.txt" />
     <Text Include="phong_perfragment.fs.txt" />
     <Text Include="phong_perfragment.vs.txt" />
+    <Text Include="point.fs.txt" />
+    <Text Include="point.gs.txt" />
+    <Text Include="point.vs.txt" />
     <Text Include="skybox.fs.txt" />
     <Text Include="skybox.vs.txt" />
     <Text Include="toon.fs.txt" />
