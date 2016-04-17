@@ -24,7 +24,4 @@ c:\versionedcode\final\objObject.cpp(183): warning C4018: '<': signed/unsigned m
 c:\versionedcode\final\objObject.cpp(185): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
 c:\versionedcode\final\objObject.cpp(98): warning C4101: 'vertexIndex': unreferenced local variable
 c:\versionedcode\final\objObject.cpp(98): warning C4101: 'normalIndex': unreferenced local variable
-  particles.cpp
-C:\VersionedCode\Final\include\vmath.h(1022): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
   gettingStarted.vcxproj -> C:\VersionedCode\Final\bin\gettingStarted_d.exe
