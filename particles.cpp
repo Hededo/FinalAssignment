@@ -19,14 +19,4 @@ struct Particle {
 	}
 };
 
-static float randBetween0and1()
-{
-	return rand() / RAND_MAX;
-}
-
-static vmath::vec4 randomColor()
-{
-	return vmath::vec4(randBetween0and1(), randBetween0and1(), randBetween0and1(), 1.0f);
-}
-
 #endif

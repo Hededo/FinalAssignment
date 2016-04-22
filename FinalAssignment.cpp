@@ -512,7 +512,7 @@ void final_app::render(double currentTime)
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
-	//block->uni_color = purple;
+	block->uni_color = purple;
 
 	glUseProgram(point_prog);
 
