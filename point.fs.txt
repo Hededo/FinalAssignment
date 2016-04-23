@@ -12,6 +12,6 @@ uniform sampler2D billboardTex;
 
 void main(void)                               
 {                        
-	//color = texture(billboardTex, gl_PointCoord);      
-	color = fs_in.color;
+	color = texture(billboardTex, gl_PointCoord);      
+	//color = fs_in.color;
 }                                  

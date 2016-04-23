@@ -10,7 +10,7 @@ void main() {
 
 	vFragColor = vFragColorVs[0];
 
-	float dist = 20.0;
+	float dist = 7.0;
 
     gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, 0.0, 0.0); 
     EmitVertex();

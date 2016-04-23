@@ -71,6 +71,7 @@ protected:
 
 	int FindUnusedParticle();
 	void SortParticles();
+	void makeNewParticles();
 	void updateParticles();
 
 	GLuint          per_fragment_program;
@@ -103,7 +104,18 @@ protected:
 		vmath::vec4	    invertNormals;
 	};
 
-	GLuint          uniforms_buffer;
+	struct particle_block
+	{
+		vmath::mat4     mv_matrix;
+		vmath::mat4     model_matrix;
+		vmath::mat4     view_matrix;
+		vmath::mat4     proj_matrix;
+		vmath::vec4     uni_color;
+		vmath::vec4     lightPos;
+		vmath::vec4	    useUniformColor;
+	};
+
+	GLuint	uniforms_buffer;
 
 	// Variables for mouse interaction
 	bool bPerVertex;
@@ -148,26 +160,13 @@ protected:
 	int LastUsedParticle = 0;
 	int ParticlesCount = 0;
 
-	int MaxParticles = 10; //100000;
+	int MaxParticles = 100;
 	Particle * Particles;
 
-	// The VBO containing the 4 vertices of the particles.
-	// Thanks to instancing, they will be shared by all particles.
-	const GLfloat g_vertex_buffer_data[12] = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		-0.5f, 0.5f, 0.0f,
-		0.5f, 0.5f, 0.0f,
-	};
-
-	GLuint billboard_vertex_buffer;
-	GLuint particles_position_buffer;
-	GLuint particles_color_buffer;
-
-	GLfloat* g_particule_position_size_data = new GLfloat[MaxParticles * 4];
-	GLubyte* g_particule_color_data = new GLubyte[MaxParticles * 4];
-
 	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 15.0f, -1.0f);
+
+	const float defaultSpread = 3.0f;
+	float spread = defaultSpread;
 #pragma endregion
 
 #pragma endregion
@@ -197,7 +196,6 @@ private:
 
 #pragma endregion
 };
-
 
 void final_app::startup()
 {
@@ -451,8 +449,6 @@ void final_app::render(double currentTime)
 	cube->Draw();
 #pragma endregion
 
-
-
 #pragma region Draw Light Source
 	sphere->BindBuffers();
 
@@ -506,38 +502,8 @@ void final_app::render(double currentTime)
 	cube->Draw();
 #pragma endregion
 
-
 #pragma region Point Sprite
-
-	// Generate 10 new particule each millisecond,
-	// but limit this to 16 ms (60 fps), or if you have 1 long frame (1sec),
-	// newparticles will be huge and the next frame even longer.
-	int newparticles = (int)(deltaTime*10000.0);
-	if (newparticles > (int)(0.016f*10000.0))
-	{
-		newparticles = (int)(0.016f*10000.0);
-	}
-
-	for (int i = 0; i < newparticles; i++) {
-		int particleIndex = FindUnusedParticle();
-		Particles[particleIndex].life = 5.0f; // This particle will live 5 seconds.
-		Particles[particleIndex].pos = particleStartPos;
-
-		float spread = 1.5f;
-		vmath::vec3 maindir = vmath::vec3(0.0f, 10.0f, 0.0f);
-		// Very bad way to generate a random direction; 
-		// See for instance http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution instead,
-		// combined with some user-controlled parameters (main direction, spread, etc)
-		vmath::vec3 randomdir = randomDirection();
-
-		Particles[particleIndex].speed = maindir + randomdir*spread;
-
-		// Very bad way to generate a random color
-		Particles[particleIndex].color = randomColor();
-
-		Particles[particleIndex].size = (float)(rand() % 500) / 10.0f;
-	}
-
+	makeNewParticles();
 	updateParticles();
 
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
@@ -547,15 +513,16 @@ void final_app::render(double currentTime)
 
 	for (int i = 0; i < MaxParticles; i++)
 	{
+		Particle particle = Particles[i];
 		glUnmapBuffer(GL_UNIFORM_BUFFER); //release the mapping of a buffer object's data store into the client's address space
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
-		block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+		particle_block * pBlock = (particle_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(particle_block), GL_MAP_WRITE_BIT);
 
-		model_matrix = vmath::translate(particleStartPos[0], particleStartPos[1], particleStartPos[2]);
-		block->model_matrix = model_matrix;
-		block->mv_matrix = view_matrix * model_matrix;
-		block->view_matrix = view_matrix;
-		block->uni_color = Particles[i].color;
+		model_matrix = vmath::translate(particle.pos[0], particle.pos[1], particle.pos[2]);
+		pBlock->model_matrix = model_matrix;
+		pBlock->mv_matrix = view_matrix * model_matrix;
+		pBlock->view_matrix = view_matrix;
+		pBlock->uni_color = particle.color;
 
 		glUseProgram(point_prog);
 
@@ -652,7 +619,7 @@ void final_app::load_shaders()
 
 	point_prog = glCreateProgram();
 	glAttachShader(point_prog, vs);
-	//glAttachShader(point_prog, gs);
+	glAttachShader(point_prog, gs);
 	glAttachShader(point_prog, fs);
 	glLinkProgram(point_prog);
 
@@ -682,6 +649,7 @@ void final_app::onKey(int key, int action)
 			fYpos = 0.0f;
 			fZpos = 75.0f;
 			lightPosOffset = vmath::vec3(0, 0, 0);
+			spread = defaultSpread;
 			break;
 		case '1':
 			lightPosOffset[0] += 1;
@@ -700,6 +668,12 @@ void final_app::onKey(int key, int action)
 			break;
 		case 'S':
 			lightPosOffset[2] -= 1;
+			break;
+		case 'Y':
+			spread -= 0.1;
+			break;
+		case 'U':
+			spread += 0.1;
 			break;
 		}
 	}
@@ -772,6 +746,7 @@ vmath::vec3 final_app::getArcballVector(int x, int y) {
 #pragma endregion
 
 
+#pragma particle functions
 // Finds a Particle in ParticlesContainer which isn't used yet.
 // (i.e. life < 0);
 int final_app::FindUnusedParticle() {
@@ -812,7 +787,7 @@ void final_app::updateParticles()
 			if (p.life > 0.0f) {
 
 				// Simulate simple physics : gravity only, no collisions
-				p.speed += vmath::vec3(0.0f, -9.81f, 0.0f) * (float)deltaTime * 0.5f;
+				p.speed += vmath::vec3(0.0f, -9.81f, 0.0f) * (float)deltaTime * 0.8f;
 				p.pos += p.speed * (float)deltaTime;
 				p.cameradistance = vmath::length(p.pos);
 				Particles[i].pos += vmath::vec3(0.0f, 10.0f, 0.0f) * (float)deltaTime;
@@ -829,6 +804,36 @@ void final_app::updateParticles()
 
 	SortParticles();
 }
+
+void final_app::makeNewParticles()
+{
+	float milliseconds = 160.0f;
+	int newparticles = (int)(deltaTime*10000.0);
+	if (newparticles > (int)(milliseconds))
+	{
+		newparticles = (int)(milliseconds);
+	}
+
+	for (int i = 0; i < newparticles; i++)
+	{
+		int particleIndex = FindUnusedParticle();
+		Particles[particleIndex].life = 5.0f; //time in seconds
+		Particles[particleIndex].pos = particleStartPos;
+
+		/*vmath::vec3 initalVec = randomDirection();
+		Particles[particleIndex].speed = initalVec * spread;*/
+
+		vmath::vec3 initalSpeed = vmath::vec3(0.0f, 1.0f, 0.0f);
+		vmath::vec3 randomdir = randomDirection();
+		Particles[particleIndex].speed = initalSpeed + randomdir * spread;
+
+		Particles[particleIndex].color = randomColor();
+
+		Particles[particleIndex].size = randSizeBetween10and30();
+	}
+}
+
+#pragma endregion
 
 
 DECLARE_MAIN(final_app)
