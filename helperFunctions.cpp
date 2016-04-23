@@ -119,12 +119,23 @@ static std::vector<unsigned char> loadImageFromFile(std::string filePath, unsign
 
 static float randBetween0and1()
 {
-	return rand() / RAND_MAX;
+	float lhs = (float)(rand() % 256);
+	float randFloat = lhs / 256.0f;
+	return randFloat;
 }
 
 static vmath::vec4 randomColor()
 {
 	return vmath::vec4(randBetween0and1(), randBetween0and1(), randBetween0and1(), 1.0f);
+}
+
+static vmath::vec3 randomDirection()
+{
+	return vmath::vec3(
+		(rand() % 2000 - 1000.0f) / 1000.0f,
+		(rand() % 2000 - 1000.0f) / 1000.0f,
+		(rand() % 2000 - 1000.0f) / 1000.0f
+		);
 }
 
 #endif

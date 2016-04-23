@@ -15,6 +15,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 #include "particles.cpp"
 #include "objObject.cpp"
@@ -26,14 +27,13 @@
 
 class final_app : public sb7::application
 {
-//Forward Declaration of Public functions
+	//Forward Declaration of Public functions
 #pragma region protected
 public:
 	final_app()
 		: per_fragment_program(0),
-		floorProgram(0) ,
+		floorProgram(0),
 		wallProgram(0),
-		toonProgram(0),
 		flatColorProgram(0),
 		skybox_prog(0),
 		point_prog(0)
@@ -41,7 +41,7 @@ public:
 	}
 #pragma endregion
 
-//Forward Declaration of Protected functions and variables
+	//Forward Declaration of Protected functions and variables
 #pragma region protected
 protected:
 	void init()
@@ -71,11 +71,11 @@ protected:
 
 	int FindUnusedParticle();
 	void SortParticles();
+	void updateParticles();
 
 	GLuint          per_fragment_program;
 	GLuint          floorProgram;
 	GLuint          wallProgram;
-	GLuint          toonProgram;
 	GLuint          flatColorProgram;
 	GLuint          skybox_prog;
 	GLuint          point_prog;
@@ -130,42 +130,44 @@ protected:
 #pragma endregion
 
 #pragma region Boolean Vectors
-const vmath::vec4 falseVec = vmath::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-const vmath::vec4 trueVec = vmath::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	const vmath::vec4 falseVec = vmath::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	const vmath::vec4 trueVec = vmath::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 #pragma endregion
 
 #pragma region Geometery
-ObjObject * cube;
-ObjObject * sphere;
-ObjObject * teapot;
-ObjObject * quad;
-ObjObject * humvee;
+	ObjObject * cube;
+	ObjObject * sphere;
+	ObjObject * teapot;
+	ObjObject * quad;
+	ObjObject * humvee;
 
 #pragma endregion
 
 #pragma region Particle Vars
-int LastUsedParticle = 0;
-int ParticlesCount = 0;
+	double deltaTime;
+	int LastUsedParticle = 0;
+	int ParticlesCount = 0;
 
-int MaxParticles = 100000;
-Particle * Particles;
+	int MaxParticles = 10; //100000;
+	Particle * Particles;
 
-// The VBO containing the 4 vertices of the particles.
-// Thanks to instancing, they will be shared by all particles.
-const GLfloat g_vertex_buffer_data[12] = {
-	-0.5f, -0.5f, 0.0f,
-	0.5f, -0.5f, 0.0f,
-	-0.5f, 0.5f, 0.0f,
-	0.5f, 0.5f, 0.0f,
-};
+	// The VBO containing the 4 vertices of the particles.
+	// Thanks to instancing, they will be shared by all particles.
+	const GLfloat g_vertex_buffer_data[12] = {
+		-0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		-0.5f, 0.5f, 0.0f,
+		0.5f, 0.5f, 0.0f,
+	};
 
-GLuint billboard_vertex_buffer;
-GLuint particles_position_buffer;
-GLuint particles_color_buffer;
+	GLuint billboard_vertex_buffer;
+	GLuint particles_position_buffer;
+	GLuint particles_color_buffer;
 
-GLfloat* g_particule_position_size_data = new GLfloat[MaxParticles * 4];
-GLubyte* g_particule_color_data = new GLubyte[MaxParticles * 4];
+	GLfloat* g_particule_position_size_data = new GLfloat[MaxParticles * 4];
+	GLubyte* g_particule_color_data = new GLubyte[MaxParticles * 4];
 
+	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 15.0f, -1.0f);
 #pragma endregion
 
 #pragma endregion
@@ -189,6 +191,9 @@ private:
 	// Initial light pos
 	vmath::vec4 initalLightPos = vmath::vec4(10.0f, 20.0f, -3.0f, 1.0f);
 	vmath::vec3 lightPosOffset = vmath::vec3(0, 0, 0);
+
+	//time
+	double lastTime = -1.0f;
 
 #pragma endregion
 };
@@ -219,7 +224,7 @@ void final_app::startup()
 	// Generate a name for the texture
 	glGenTextures(1, &tex_floor); //GLuint tex_floor
 	// Now bind it to the context using the GL_TEXTURE_2D binding point
-	glBindTexture(GL_TEXTURE_2D, tex_floor); 
+	glBindTexture(GL_TEXTURE_2D, tex_floor);
 	// Specify the amount of storage we want to use for the texture
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
@@ -253,7 +258,7 @@ void final_app::startup()
 #pragma endregion
 
 #pragma region OPENGL Settings
-    glFrontFace(GL_CW); //glFrontFace(GLenum mode) In a scene composed entirely of opaque closed surfaces, back-facing polygons are never visible.
+	glFrontFace(GL_CW); //glFrontFace(GLenum mode) In a scene composed entirely of opaque closed surfaces, back-facing polygons are never visible.
 	glEnable(GL_DEPTH_TEST); //glEnable(GLenum cap) glEnable and glDisable enable and disable various capabilities.
 	glDepthFunc(GL_LEQUAL);	//glDepthFunc(GLenum func) specifies the function used to compare each incoming pixel depth value with the depth value present in the depth buffer. 
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -263,10 +268,9 @@ void final_app::startup()
 
 	Particles = new Particle[MaxParticles];
 
-	for (int i = 0; i<MaxParticles; i++) {
+	for (int i = 0; i < MaxParticles; i++) {
 		Particles[i].life = -1.0f;
 		Particles[i].cameradistance = -1.0f;
-		Particles[i].color = randomColor();
 	}
 
 #pragma endregion
@@ -276,8 +280,13 @@ void final_app::render(double currentTime)
 {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	const float deltaTime = (float)currentTime * 0.1f;
 
+	if (lastTime == -1.0f)
+	{
+		lastTime = currentTime;
+	}
+
+	deltaTime = currentTime - lastTime;
 #pragma region Calculations for mouse interaction camera rotation and translation matrix
 	float fAngle = 0.0f;
 	vmath::vec3 axis_in_camera_coord = (0.0f, 1.0f, 0.0f);
@@ -363,7 +372,7 @@ void final_app::render(double currentTime)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    vmath::mat4 model_matrix = vmath::scale(250.0f);
+	vmath::mat4 model_matrix = vmath::scale(250.0f);
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
@@ -499,28 +508,64 @@ void final_app::render(double currentTime)
 
 
 #pragma region Point Sprite
+
+	// Generate 10 new particule each millisecond,
+	// but limit this to 16 ms (60 fps), or if you have 1 long frame (1sec),
+	// newparticles will be huge and the next frame even longer.
+	int newparticles = (int)(deltaTime*10000.0);
+	if (newparticles > (int)(0.016f*10000.0))
+	{
+		newparticles = (int)(0.016f*10000.0);
+	}
+
+	for (int i = 0; i < newparticles; i++) {
+		int particleIndex = FindUnusedParticle();
+		Particles[particleIndex].life = 5.0f; // This particle will live 5 seconds.
+		Particles[particleIndex].pos = particleStartPos;
+
+		float spread = 1.5f;
+		vmath::vec3 maindir = vmath::vec3(0.0f, 10.0f, 0.0f);
+		// Very bad way to generate a random direction; 
+		// See for instance http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution instead,
+		// combined with some user-controlled parameters (main direction, spread, etc)
+		vmath::vec3 randomdir = randomDirection();
+
+		Particles[particleIndex].speed = maindir + randomdir*spread;
+
+		// Very bad way to generate a random color
+		Particles[particleIndex].color = randomColor();
+
+		Particles[particleIndex].size = (float)(rand() % 500) / 10.0f;
+	}
+
+	updateParticles();
+
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
 	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
 	glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
 
-	glUnmapBuffer(GL_UNIFORM_BUFFER); //release the mapping of a buffer object's data store into the client's address space
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
-	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+	for (int i = 0; i < MaxParticles; i++)
+	{
+		glUnmapBuffer(GL_UNIFORM_BUFFER); //release the mapping of a buffer object's data store into the client's address space
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+		block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
 
-	model_matrix = vmath::translate(25.0f, 10.0f, -40.0f);
-	block->model_matrix = model_matrix;
-	block->mv_matrix = view_matrix * model_matrix;
-	block->view_matrix = view_matrix;
-	block->uni_color = purple;
+		model_matrix = vmath::translate(particleStartPos[0], particleStartPos[1], particleStartPos[2]);
+		block->model_matrix = model_matrix;
+		block->mv_matrix = view_matrix * model_matrix;
+		block->view_matrix = view_matrix;
+		block->uni_color = Particles[i].color;
 
-	glUseProgram(point_prog);
+		glUseProgram(point_prog);
 
-	glPointSize(40.0f);
-	glCullFace(GL_FRONT);
-    glDrawArrays(GL_POINTS, 0, 1);
+		glPointSize(Particles[i].size);
+		glCullFace(GL_FRONT);
+		glDrawArrays(GL_POINTS, 0, 1);
+	}
 
 #pragma endregion
+	lastTime = currentTime;
 
 }
 
@@ -571,21 +616,6 @@ void final_app::load_shaders()
 	glAttachShader(wallProgram, fs);
 	glLinkProgram(wallProgram);
 
-	vs = sb7::shader::load("toon.vs.txt", GL_VERTEX_SHADER);
-	printShaderInfoLog(vs);
-	fs = sb7::shader::load("toon.fs.txt", GL_FRAGMENT_SHADER);
-	printShaderInfoLog(fs);
-
-	if (toonProgram)
-	{
-		glDeleteProgram(toonProgram);
-	}
-
-	toonProgram = glCreateProgram();
-	glAttachShader(toonProgram, vs);
-	glAttachShader(toonProgram, fs);
-	glLinkProgram(toonProgram);
-
 	vs = sb7::shader::load("flatColor.vs.txt", GL_VERTEX_SHADER);
 	fs = sb7::shader::load("flatColor.fs.txt", GL_FRAGMENT_SHADER);
 
@@ -616,9 +646,13 @@ void final_app::load_shaders()
 	gs = sb7::shader::load("point.gs.txt", GL_GEOMETRY_SHADER);
 	fs = sb7::shader::load("point.fs.txt", GL_FRAGMENT_SHADER);
 
+	printShaderInfoLog(vs);
+	printShaderInfoLog(gs);
+	printShaderInfoLog(fs);
+
 	point_prog = glCreateProgram();
 	glAttachShader(point_prog, vs);
-	glAttachShader(point_prog, gs);
+	//glAttachShader(point_prog, gs);
 	glAttachShader(point_prog, fs);
 	glLinkProgram(point_prog);
 
@@ -736,6 +770,66 @@ vmath::vec3 final_app::getArcballVector(int x, int y) {
 	return vecP;
 }
 #pragma endregion
+
+
+// Finds a Particle in ParticlesContainer which isn't used yet.
+// (i.e. life < 0);
+int final_app::FindUnusedParticle() {
+
+	for (int i = LastUsedParticle; i < MaxParticles; i++) {
+		if (Particles[i].life < 0) {
+			LastUsedParticle = i;
+			return i;
+		}
+	}
+
+	for (int i = 0; i < LastUsedParticle; i++) {
+		if (Particles[i].life < 0) {
+			LastUsedParticle = i;
+			return i;
+		}
+	}
+
+	return 0; // All particles are taken, override the first one
+}
+
+void final_app::SortParticles() {
+	std::sort(&Particles[0], &Particles[MaxParticles]);
+}
+
+void final_app::updateParticles()
+{
+	// Simulate all particles
+	int ParticlesCount = 0;
+	for (int i = 0; i < MaxParticles; i++) {
+
+		Particle& p = Particles[i]; // shortcut
+
+		if (p.life > 0.0f) {
+
+			// Decrease life
+			p.life -= deltaTime;
+			if (p.life > 0.0f) {
+
+				// Simulate simple physics : gravity only, no collisions
+				p.speed += vmath::vec3(0.0f, -9.81f, 0.0f) * (float)deltaTime * 0.5f;
+				p.pos += p.speed * (float)deltaTime;
+				p.cameradistance = vmath::length(p.pos);
+				Particles[i].pos += vmath::vec3(0.0f, 10.0f, 0.0f) * (float)deltaTime;
+			}
+			else {
+				// Particles that just died will be put at the end of the buffer in SortParticles();
+				p.cameradistance = -1.0f;
+			}
+
+			ParticlesCount++;
+
+		}
+	}
+
+	SortParticles();
+}
+
 
 DECLARE_MAIN(final_app)
 

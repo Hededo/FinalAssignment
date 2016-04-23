@@ -278,8 +278,6 @@
     <Text Include="point.vs.txt" />
     <Text Include="skybox.fs.txt" />
     <Text Include="skybox.vs.txt" />
-    <Text Include="toon.fs.txt" />
-    <Text Include="toon.vs.txt" />
     <Text Include="wall.fs.txt" />
     <Text Include="wall.vs.txt" />
   </ItemGroup>

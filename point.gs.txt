@@ -3,40 +3,28 @@
 layout (points) in;
 layout (points, max_vertices = 6) out;
 
-in VS_OUT
-{
-	vec4 color;
-} vs_in;
-
-out VS_OUT
-{
-	vec4 color;
-} gs_out;
+in vec4 vFragColorVs[];
+out vec4 vFragColor;
 
 void main() {    
 
-	gs_out.color = vs_in.color; 
+	vFragColor = vFragColorVs[0];
 
 	float dist = 20.0;
 
     gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, 0.0, 0.0); 
-	gl_Color = fs_in.color;
     EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(-dist, 0.0, 0.0, 0.0);
-	gl_Color = fs_in.color;
     EmitVertex();
 
 	gl_Position = gl_in[0].gl_Position + vec4(dist, 0.0, 0.0, 0.0);
-	gl_Color = fs_in.color;
     EmitVertex();
    
 	//gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, -dist, 0.0);
-	//gl_Color = fs_in.color;
     //EmitVertex();
 
 	//gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, dist, 0.0);
-	//gl_Color = fs_in.color;
     //EmitVertex();
 
     EndPrimitive();

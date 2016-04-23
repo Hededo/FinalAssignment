@@ -8,12 +8,10 @@ in VS_OUT
 	vec4 color;
 } fs_in;
 
-uniform sampler2D billboardTex;
+uniform sampler2D billboardTex;    
 
 void main(void)                               
 {                        
 	//color = texture(billboardTex, gl_PointCoord);      
 	color = fs_in.color;
-	//gl_Color = fs_in.color;
-	//color = vec4(1.0, 0, 0, 1.0);
-}                                             
+}                                  
