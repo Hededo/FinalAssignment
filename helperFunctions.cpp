@@ -138,28 +138,21 @@ static vmath::vec4 randomColor()
 	return vmath::vec4(randBetween0and1(), randBetween0and1(), randBetween0and1(), 1.0f);
 }
 
-//static vmath::vec3 randomDirection()
-//{
-//	float multiplier = 0.4f;
-//	float x = sign() * randBetween0and1() * multiplier;
-//	float y = 1.0f + randBetween0and1() * multiplier;
-//	float z = sign() * randBetween0and1() * multiplier;
-//
-//	return vmath::vec3(x, y, z);
-//}
-
 static vmath::vec3 randomDirection()
 {
-	return vmath::vec3(
-		(rand() % 2000 - 1000.0f) / 1000.0f,
-		(rand() % 2000 - 1000.0f) / 1000.0f,
-		(rand() % 2000 - 1000.0f) / 1000.0f
-		);
+	float multiplier = 0.9f;
+	float x = sign() * randBetween0and1() * multiplier;
+	float y = 0.8f;
+	float z = sign() * randBetween0and1() * multiplier;
+
+	return vmath::vec3(x, y, z);
 }
 
-static float randSizeBetween10and30()
-{
-	return (float)(rand() % 300) / 10.0f;
+static float randSizeBetween(float a, float b) {
+	float random = ((float)rand()) / (float)RAND_MAX;
+	float diff = b - a;
+	float r = random * diff;
+	return a + r;
 }
 
 #endif

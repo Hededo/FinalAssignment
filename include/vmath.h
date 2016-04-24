@@ -1084,7 +1084,7 @@ static inline Tmat4<T> scale(T x, T y, T z)
 template <typename T>
 static inline Tmat4<T> scale(const Tvec3<T>& v)
 {
-    return scale(v[0], v[1], v[2]);
+    return scales(v[0], v[1], v[2]);
 }
 
 template <typename T>
