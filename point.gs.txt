@@ -6,11 +6,23 @@ layout (points, max_vertices = 6) out;
 in vec4 vFragColorVs[];
 out vec4 vFragColor;
 
+layout (std140) uniform constants
+{
+    mat4 mv_matrix;	
+	mat4 model_matrix;													
+	mat4 view_matrix;												
+	mat4 proj_matrix;												
+	vec4 uni_color;		
+	vec4 light_pos;									     		
+	vec4 time;
+	vec4 max_time;
+}; 
+
 void main() {    
 
 	vFragColor = vFragColorVs[0];
 
-	float dist = 7.0;
+	float dist = 7.0 * (max_time.x - time.x);
 
     gl_Position = gl_in[0].gl_Position + vec4(0.0, 0.0, 0.0, 0.0); 
     EmitVertex();

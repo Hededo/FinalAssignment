@@ -148,6 +148,7 @@ static vmath::vec3 randomDirection()
 	return vmath::vec3(x, y, z);
 }
 
+
 static float randSizeBetween(float a, float b) {
 	float random = ((float)rand()) / (float)RAND_MAX;
 	float diff = b - a;

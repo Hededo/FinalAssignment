@@ -1,9 +1,6 @@
 #version 410 core  
 
-// Per-vertex inputs
 layout (location = 0) in vec4 position;                          
-layout (location = 1) in vec4 normal;
-layout (location = 2) in vec4 attributeColor;  
  
 layout (std140) uniform constants
 {
@@ -13,7 +10,8 @@ layout (std140) uniform constants
 	mat4 proj_matrix;												
 	vec4 uni_color;		
 	vec4 light_pos;									     		
-	vec4 useUniformColor;	
+	vec4 time;
+	vec4 max_time;
 };          
 
 // Outputs to Fragment Shader

@@ -2,16 +2,22 @@
 
 out vec4 color;      
 
-// Input from vertex shader
-in VS_OUT
+layout (std140) uniform constants
 {
-	vec4 color;
-} fs_in;
+    mat4 mv_matrix;	
+	mat4 model_matrix;													
+	mat4 view_matrix;												
+	mat4 proj_matrix;												
+	vec4 uni_color;		
+	vec4 light_pos;									     		
+	vec4 time;
+	vec4 max_time;
+}; 
 
 uniform sampler2D billboardTex;    
 
 void main(void)                               
 {                        
 	//color = texture(billboardTex, gl_PointCoord);      
-	color = fs_in.color;
+	color = uni_color;
 }                                  

@@ -112,7 +112,8 @@ protected:
 		vmath::mat4     proj_matrix;
 		vmath::vec4     uni_color;
 		vmath::vec4     lightPos;
-		vmath::vec4	    useUniformColor;
+		vmath::vec4	    time;
+		vmath::vec4	    max_time;
 	};
 
 	GLuint	uniforms_buffer;
@@ -160,13 +161,15 @@ protected:
 	int LastUsedParticle = 0;
 	int ParticlesCount = 0;
 
-	int MaxParticles = 100;
+	int MaxParticles = 500;
 	Particle * Particles;
 
-	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 15.0f, -4.0f);
+	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 15.0f, -1.0f);
 
-	const float defaultSpread = 6.0f;
+	const float defaultSpread = 3.0f;
 	float spread = defaultSpread;
+
+	const float max_time = 5.0f;
 #pragma endregion
 
 #pragma endregion
@@ -506,49 +509,10 @@ void final_app::render(double currentTime)
 	makeNewParticles();
 	updateParticles();
 
-	quad->BindBuffers();
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
 	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
 	glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
-
-	//View matrix
-	//| xx xy xz xw |
-	//| yx yy yz yw |
-	//| zx zy zz zw |
-	//| wx wy wz ww
-	// =
-	//| R       T |
-	//| (0, 0, 0) 1 |
-
-	vmath::mat3 R = vmath::mat3(
-		vmath::vec3(view_matrix[0][0], view_matrix[0][1], view_matrix[0][2]),
-		vmath::vec3(view_matrix[1][0], view_matrix[1][1], view_matrix[1][2]),
-		vmath::vec3(view_matrix[2][0], view_matrix[2][1], view_matrix[2][2])
-		);
-
-	vmath::vec3 T = vmath::vec3(view_matrix[0][3], view_matrix[1][3], view_matrix[2][3]);
-
-	float xx = view_matrix[0][0];
-	float yx = view_matrix[1][0];
-	float zx = view_matrix[2][0];
-
-	//d = sqrt( xx² + yx² + zx² )
-	float d = sqrt( (xx*xx) + (yx*yx) + (zx*zx) );
-
-	//| d 0 0 T.x |
-	//| 0 d 0 T.y |
-	//| 0 0 d T.z |
-	//| 0 0 0   1 |
-
-	vmath::mat4 billboard_view_matrix = vmath::mat4(
-		vmath::vec4(d, 0.0, 0.0, T[0]),
-		vmath::vec4(0.0, d, 0.0, T[1]),
-		vmath::vec4(0.0, 0.0, d, T[2]),
-		vmath::vec4(0.0, 0.0, 0, 1)
-		);
-
-	billboard_view_matrix = view_matrix;
 
 	for (int i = 0; i < MaxParticles; i++)
 	{
@@ -557,16 +521,19 @@ void final_app::render(double currentTime)
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
 		particle_block * pBlock = (particle_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(particle_block), GL_MAP_WRITE_BIT);
 
-		model_matrix = vmath::translate(particle.pos[0], particle.pos[1], particle.pos[2]) * vmath::scale(particle.size);
+		model_matrix = vmath::translate(particle.pos[0], particle.pos[1], particle.pos[2]);
 		pBlock->model_matrix = model_matrix;
-		pBlock->mv_matrix = billboard_view_matrix * model_matrix;
-		pBlock->view_matrix = billboard_view_matrix;
+		pBlock->mv_matrix = view_matrix * model_matrix;
+		pBlock->view_matrix = view_matrix;
 		pBlock->uni_color = particle.color;
+		pBlock->time = vmath::vec4(particle.life, 0.0f, 0.0f, 0.0f);
+		pBlock->max_time = vmath::vec4(max_time, 0.0f, 0.0f, 0.0f);
 
 		glUseProgram(point_prog);
 
+		glPointSize(Particles[i].size * (1.0f/(fZpos)) );
 		glCullFace(GL_FRONT);
-		quad->Draw();
+		glDrawArrays(GL_POINTS, 0, 1);
 	}
 
 #pragma endregion
@@ -657,7 +624,7 @@ void final_app::load_shaders()
 
 	point_prog = glCreateProgram();
 	glAttachShader(point_prog, vs);
-	//glAttachShader(point_prog, gs);
+	glAttachShader(point_prog, gs);
 	glAttachShader(point_prog, fs);
 	glLinkProgram(point_prog);
 
@@ -824,9 +791,8 @@ void final_app::updateParticles()
 			p.life -= deltaTime;
 			if (p.life > 0.0f) {
 
-				float gravity = -16.0f;
 				// Simulate simple physics : gravity only, no collisions
-				p.speed += vmath::vec3(0.0f, gravity, 0.0f) * (float)deltaTime * 0.8f;
+				p.speed += vmath::vec3(0.0f, -9.81f, 0.0f) * (float)deltaTime * 0.8f;
 				p.pos += p.speed * (float)deltaTime;
 				p.cameradistance = vmath::length(p.pos);
 				Particles[i].pos += vmath::vec3(0.0f, 10.0f, 0.0f) * (float)deltaTime;
@@ -856,12 +822,15 @@ void final_app::makeNewParticles()
 	for (int i = 0; i < newparticles; i++)
 	{
 		int particleIndex = FindUnusedParticle();
-		Particles[particleIndex].life = 5.0f; //time in seconds
+		Particles[particleIndex].life = max_time;
 		Particles[particleIndex].pos = particleStartPos;
+
 		vmath::vec3 initalVec = randomDirection();
 		Particles[particleIndex].speed = initalVec * spread;
+
 		Particles[particleIndex].color = randomColor();
-		Particles[particleIndex].size = randSizeBetween(0.5, 2.5);
+
+		Particles[particleIndex].size = randSizeBetween(500.0f, 1500.0f);
 	}
 }
 
