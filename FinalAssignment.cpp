@@ -73,6 +73,7 @@ protected:
 	void SortParticles();
 	void makeNewParticles();
 	void updateParticles();
+	void bindParticleTexture(float time);
 
 	GLuint          per_fragment_program;
 	GLuint          floorProgram;
@@ -85,6 +86,7 @@ protected:
 	GLuint          tex_floor_normal;
 	GLuint          tex_skybox;
 	GLuint          tex_particle;
+	GLuint          tex_particle2;
 
 	GLuint          depthBuffer;
 	GLuint          depthTexture;
@@ -111,7 +113,7 @@ protected:
 		vmath::mat4     view_matrix;
 		vmath::mat4     proj_matrix;
 		vmath::vec4     uni_color;
-		vmath::vec4     lightPos;
+		vmath::vec4     emitNumber;
 		vmath::vec4	    time;
 		vmath::vec4	    max_time;
 	};
@@ -161,15 +163,18 @@ protected:
 	int LastUsedParticle = 0;
 	int ParticlesCount = 0;
 
-	int MaxParticles = 500;
+	const int defaultMaxParticles = 501;
+	int MaxParticles = defaultMaxParticles;
 	Particle * Particles;
 
-	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 15.0f, -1.0f);
+	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 11.0f, -4.0f);
 
-	const float defaultSpread = 3.0f;
+	const float defaultSpread = 4.0f;
 	float spread = defaultSpread;
 
 	const float max_time = 5.0f;
+
+	int emitNumber = 6;
 #pragma endregion
 
 #pragma endregion
@@ -191,7 +196,7 @@ private:
 	float fZpos = 75.0f;
 
 	// Initial light pos
-	vmath::vec4 initalLightPos = vmath::vec4(10.0f, 20.0f, -3.0f, 1.0f);
+	vmath::vec4 initalLightPos = vmath::vec4(30.0f, 20.0f, -3.0f, 1.0f);
 	vmath::vec3 lightPosOffset = vmath::vec3(0, 0, 0);
 
 	//time
@@ -243,14 +248,25 @@ void final_app::startup()
 	//_______________________________________________________________________________________________________________
 	tex_skybox = sb7::ktx::file::load("bin\\media\\textures\\mountaincube.ktx");
 	//_______________________________________________________________________________________________________________
-	//texture_data = loadImageFromFile("bin\\media\\textures\\particle.png", square_tex_width, square_tex_height);
-	texture_data = loadImageFromFile("bin\\media\\textures\\pikachu.png", square_tex_width, square_tex_height);
-	// Enable the texture for OpenGL.
+	texture_data = loadImageFromFile("bin\\media\\textures\\particle2.png", square_tex_width, square_tex_height);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
 																					  // Generate a name for the texture
 	glGenTextures(1, &tex_particle); //GLuint tex_floor
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
+	// Specify the amount of storage we want to use for the texture
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
+	// Assume the texture is already bound to the GL_TEXTURE_2D target
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+
+	//_______________________________________________________________________________________________________________
+	texture_data = loadImageFromFile("bin\\media\\textures\\pikachu.png", square_tex_width, square_tex_height);
+	// Enable the texture for OpenGL.
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
+																					  // Generate a name for the texture
+	glGenTextures(1, &tex_particle2); //GLuint tex_floor
+									 // Now bind it to the context using the GL_TEXTURE_2D binding point
+	glBindTexture(GL_TEXTURE_2D, tex_particle2);
 	// Specify the amount of storage we want to use for the texture
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
@@ -281,6 +297,7 @@ void final_app::render(double currentTime)
 {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
 
 	if (lastTime == -1.0f)
 	{
@@ -505,18 +522,18 @@ void final_app::render(double currentTime)
 	cube->Draw();
 #pragma endregion
 
+	glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_ONE, GL_ONE);
 #pragma region Point Sprite
 	makeNewParticles();
 	updateParticles();
 
-	glBindTexture(GL_TEXTURE_2D, tex_particle);
-	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
-	glBindTexture(GL_TEXTURE_2D, tex_particle);
-	glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
-
 	for (int i = 0; i < MaxParticles; i++)
 	{
 		Particle particle = Particles[i];
+		bindParticleTexture(particle.life);
+
 		glUnmapBuffer(GL_UNIFORM_BUFFER); //release the mapping of a buffer object's data store into the client's address space
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
 		particle_block * pBlock = (particle_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(particle_block), GL_MAP_WRITE_BIT);
@@ -528,10 +545,15 @@ void final_app::render(double currentTime)
 		pBlock->uni_color = particle.color;
 		pBlock->time = vmath::vec4(particle.life, 0.0f, 0.0f, 0.0f);
 		pBlock->max_time = vmath::vec4(max_time, 0.0f, 0.0f, 0.0f);
+		pBlock->emitNumber = vmath::vec4((float)emitNumber, 0.0f, 0.0f, 0.0f);
 
 		glUseProgram(point_prog);
 
-		glPointSize(Particles[i].size * (1.0f/(fZpos)) );
+		float deltaLife = max_time - particle.life;
+		float scale = (deltaLife * 0.5f);
+		float scaleSize = (scale > 1.0) ? scale : 1.0f;
+
+		glPointSize( (Particles[i].size * (1.0f/(fZpos))) * scaleSize);
 		glCullFace(GL_FRONT);
 		glDrawArrays(GL_POINTS, 0, 1);
 	}
@@ -655,6 +677,8 @@ void final_app::onKey(int key, int action)
 			fZpos = 75.0f;
 			lightPosOffset = vmath::vec3(0, 0, 0);
 			spread = defaultSpread;
+			MaxParticles = defaultMaxParticles;
+			emitNumber = 6;
 			break;
 		case '1':
 			lightPosOffset[0] += 1;
@@ -680,6 +704,24 @@ void final_app::onKey(int key, int action)
 		case 'U':
 			spread += 0.1;
 			break;
+		case 'H':
+			if (MaxParticles > 1)
+			{
+				MaxParticles -= 10;
+			}
+			break;
+		case 'J':
+			MaxParticles += 10;
+			break;
+		case 'G':
+			if (emitNumber < 6)
+			{
+				emitNumber++;
+				break;
+			}
+			emitNumber = 1;
+			break;
+			
 		}
 	}
 	// Check to see if shift was released
@@ -792,10 +834,12 @@ void final_app::updateParticles()
 			if (p.life > 0.0f) {
 
 				// Simulate simple physics : gravity only, no collisions
-				p.speed += vmath::vec3(0.0f, -9.81f, 0.0f) * (float)deltaTime * 0.8f;
+				float gravity = -11.0f;//-9.81f;
+				p.speed += vmath::vec3(0.0f, gravity, 0.0f) * (float)deltaTime * 0.8f;
 				p.pos += p.speed * (float)deltaTime;
 				p.cameradistance = vmath::length(p.pos);
-				Particles[i].pos += vmath::vec3(0.0f, 10.0f, 0.0f) * (float)deltaTime;
+				p.pos += vmath::vec3(0.0f, 10.0f, 0.0f) * (float)deltaTime;
+
 			}
 			else {
 				// Particles that just died will be put at the end of the buffer in SortParticles();
@@ -812,6 +856,9 @@ void final_app::updateParticles()
 
 void final_app::makeNewParticles()
 {
+	// Generate 10 new particule each millisecond,
+	// but limit this to 16 ms (60 fps), or if you have 1 long frame (1sec),
+	// newparticles will be huge and the next frame even longer.
 	float milliseconds = 160.0f;
 	int newparticles = (int)(deltaTime*10000.0);
 	if (newparticles > (int)(milliseconds))
@@ -831,6 +878,25 @@ void final_app::makeNewParticles()
 		Particles[particleIndex].color = randomColor();
 
 		Particles[particleIndex].size = randSizeBetween(500.0f, 1500.0f);
+	}
+}
+
+void final_app::bindParticleTexture(float time)
+{
+	float halfLife = max_time - (3.0f * max_time)/(4.0f);
+	if (time < halfLife)
+	{
+		glBindTexture(GL_TEXTURE_2D, tex_particle);
+		glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+		glBindTexture(GL_TEXTURE_2D, tex_particle2);
+		glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, tex_particle);
+		glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+		glBindTexture(GL_TEXTURE_2D, tex_particle);
+		glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
 	}
 }
 

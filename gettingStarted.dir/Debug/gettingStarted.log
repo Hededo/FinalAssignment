@@ -24,8 +24,8 @@ c:\versionedcode\final\objObject.cpp(183): warning C4018: '<': signed/unsigned m
 c:\versionedcode\final\objObject.cpp(185): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
 c:\versionedcode\final\objObject.cpp(98): warning C4101: 'vertexIndex': unreferenced local variable
 c:\versionedcode\final\objObject.cpp(98): warning C4101: 'normalIndex': unreferenced local variable
-FinalAssignment.cpp(678): warning C4305: '-=': truncation from 'double' to 'float'
-FinalAssignment.cpp(681): warning C4305: '+=': truncation from 'double' to 'float'
-FinalAssignment.cpp(754): warning C4068: unknown pragma
-FinalAssignment.cpp(791): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+FinalAssignment.cpp(702): warning C4305: '-=': truncation from 'double' to 'float'
+FinalAssignment.cpp(705): warning C4305: '+=': truncation from 'double' to 'float'
+FinalAssignment.cpp(796): warning C4068: unknown pragma
+FinalAssignment.cpp(833): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
   gettingStarted.vcxproj -> C:\VersionedCode\Final\bin\gettingStarted_d.exe

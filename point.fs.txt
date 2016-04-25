@@ -9,7 +9,7 @@ layout (std140) uniform constants
 	mat4 view_matrix;												
 	mat4 proj_matrix;												
 	vec4 uni_color;		
-	vec4 light_pos;									     		
+	vec4 emitNumber;									     		
 	vec4 time;
 	vec4 max_time;
 }; 
@@ -17,7 +17,6 @@ layout (std140) uniform constants
 uniform sampler2D billboardTex;    
 
 void main(void)                               
-{                        
-	//color = texture(billboardTex, gl_PointCoord);      
-	color = uni_color;
+{              
+	color = texture(billboardTex, gl_PointCoord) * uni_color;
 }                                  
