@@ -4,6 +4,9 @@
 layout (location = 0) in vec4 position;                          
 layout (location = 1) in vec4 normal;
 layout (location = 2) in vec4 attributeColor;  
+layout (location = 3) in vec4 textureCoordinate;  
+
+layout (location = 0) out vec4 color;
 
 // Matrices we'll need
 layout (std140) uniform constants
@@ -25,6 +28,7 @@ out VS_OUT
     vec3 L;
     vec3 V;
 	vec3 color;
+	vec2 tc;
 } vs_out;
 
 void main(void)
@@ -53,6 +57,8 @@ void main(void)
     {                               				
       vs_out.color = uni_color.xyz;		
 	}    
+
+	vs_out.tc = vec2(textureCoordinate.x, textureCoordinate.y);
 
     // Calculate the clip-space position of each vertex
     gl_Position = proj_matrix * P;

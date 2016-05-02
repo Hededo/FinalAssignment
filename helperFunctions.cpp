@@ -142,7 +142,7 @@ static vmath::vec3 randomDirection()
 {
 	float multiplier = 0.9f;
 	float x = sign() * randBetween0and1() * multiplier;
-	float y = 0.8f;
+	float y = 1.0f;
 	float z = sign() * randBetween0and1() * multiplier;
 
 	return vmath::vec3(x, y, z);

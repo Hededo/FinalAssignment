@@ -87,6 +87,7 @@ protected:
 	GLuint          tex_skybox;
 	GLuint          tex_particle;
 	GLuint          tex_particle2;
+	GLuint          tex_fountain;
 
 	GLuint          depthBuffer;
 	GLuint          depthTexture;
@@ -167,7 +168,7 @@ protected:
 	int MaxParticles = defaultMaxParticles;
 	Particle * Particles;
 
-	vmath::vec3 particleStartPos = vmath::vec3(0.0f, 11.0f, -4.0f);
+	vmath::vec3 particleStartPos = vmath::vec3(0.0f, -10.0f, 0.0f);
 
 	const float defaultSpread = 4.0f;
 	float spread = defaultSpread;
@@ -241,6 +242,19 @@ void final_app::startup()
 	glGenTextures(1, &tex_floor_normal); //GLuint tex_floor_normal
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_floor_normal);
+	// Specify the amount of storage we want to use for the texture
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
+	// Assume the texture is already bound to the GL_TEXTURE_2D target
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
+
+	//_______________________________________________________________________________________________________________
+	texture_data = loadImageFromFile("bin\\media\\textures\\granite.png", square_tex_width, square_tex_height);
+	// Enable the texture for OpenGL.
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
+																					  // Generate a name for the texture
+	glGenTextures(1, &tex_fountain);
+	// Now bind it to the context using the GL_TEXTURE_2D binding point
+	glBindTexture(GL_TEXTURE_2D, tex_fountain);
 	// Specify the amount of storage we want to use for the texture
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, *square_tex_width, *square_tex_height);
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
@@ -402,18 +416,28 @@ void final_app::render(double currentTime)
 	cube->Draw();
 #pragma endregion
 
-#pragma region Fountain Base Stand
-	cube->BindBuffers();
+#pragma region Fountain Humvee
+	humvee->BindBuffers();
 
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
 	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
 
+	GLint tex_fountain_location = glGetUniformLocation(per_fragment_program, "tex_fountain");
+
 	glUseProgram(per_fragment_program);
+	glUniform1i(tex_fountain_location, 1);
+	glUniform1i(tex_fountain_location, 0);
+
+	glBindTexture(GL_TEXTURE_2D, tex_fountain);
+	glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+	glBindTexture(GL_TEXTURE_2D, tex_fountain);
+	glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
 
 	model_matrix =
-		vmath::translate(0.0f, -18.0f, -5.0f) *
-		vmath::scale(12.0f);
+		vmath::translate(0.0f, -30.0f, 0.0f) *
+		vmath::scale(0.1f) *
+		vmath::rotate(270.0f, 1.0f, 0.0f, 0.0f );
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
@@ -423,51 +447,76 @@ void final_app::render(double currentTime)
 
 	glDisable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	cube->Draw();
+	humvee->Draw();
 #pragma endregion
 
-#pragma region Fountain Middle Stand
-
-	sphere->BindBuffers();
-
-	glUnmapBuffer(GL_UNIFORM_BUFFER);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
-	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
-	glUseProgram(per_fragment_program);
-
-	model_matrix =
-		vmath::translate(0.0f, -4.0f, -5.0f) *
-		vmath::scale(11.0f);
-	block->model_matrix = model_matrix;
-	block->mv_matrix = view_matrix * model_matrix;
-	block->view_matrix = view_matrix;
-	block->uni_color = purple;
-
-	sphere->Draw();
-
-#pragma endregion
-
-#pragma region Fountain Top
-
-	cube->BindBuffers();
-	glUnmapBuffer(GL_UNIFORM_BUFFER);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
-	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
-
-	glUseProgram(per_fragment_program);
-
-	model_matrix =
-		vmath::translate(0.0f, 7.0f, -5.0f) *
-		vmath::scale(5.0f);
-	block->model_matrix = model_matrix;
-	block->mv_matrix = view_matrix * model_matrix;
-	block->view_matrix = view_matrix;
-	block->uni_color = orange;
-	block->useUniformColor = trueVec;
-	block->invertNormals = falseVec;
-
-	cube->Draw();
-#pragma endregion
+//
+//#pragma region Fountain Base Stand
+//	cube->BindBuffers();
+//
+//	glUnmapBuffer(GL_UNIFORM_BUFFER);
+//	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+//	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+//
+//	glUseProgram(per_fragment_program);
+//
+//	model_matrix =
+//		vmath::translate(0.0f, -18.0f, -5.0f) *
+//		vmath::scale(12.0f);
+//	block->model_matrix = model_matrix;
+//	block->mv_matrix = view_matrix * model_matrix;
+//	block->view_matrix = view_matrix;
+//	block->uni_color = orange;
+//	block->useUniformColor = trueVec;
+//	block->invertNormals = falseVec;
+//
+//	glDisable(GL_CULL_FACE);
+//	glCullFace(GL_BACK);
+//	cube->Draw();
+//#pragma endregion
+//
+//#pragma region Fountain Middle Stand
+//
+//	sphere->BindBuffers();
+//
+//	glUnmapBuffer(GL_UNIFORM_BUFFER);
+//	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+//	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+//	glUseProgram(per_fragment_program);
+//
+//	model_matrix =
+//		vmath::translate(0.0f, -4.0f, -5.0f) *
+//		vmath::scale(11.0f);
+//	block->model_matrix = model_matrix;
+//	block->mv_matrix = view_matrix * model_matrix;
+//	block->view_matrix = view_matrix;
+//	block->uni_color = purple;
+//
+//	sphere->Draw();
+//
+//#pragma endregion
+//
+//#pragma region Fountain Top
+//
+//	cube->BindBuffers();
+//	glUnmapBuffer(GL_UNIFORM_BUFFER);
+//	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
+//	block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(uniforms_block), GL_MAP_WRITE_BIT);
+//
+//	glUseProgram(per_fragment_program);
+//
+//	model_matrix =
+//		vmath::translate(0.0f, 7.0f, -5.0f) *
+//		vmath::scale(5.0f);
+//	block->model_matrix = model_matrix;
+//	block->mv_matrix = view_matrix * model_matrix;
+//	block->view_matrix = view_matrix;
+//	block->uni_color = orange;
+//	block->useUniformColor = trueVec;
+//	block->invertNormals = falseVec;
+//
+//	cube->Draw();
+//#pragma endregion
 
 #pragma region Draw Light Source
 	sphere->BindBuffers();
@@ -834,7 +883,7 @@ void final_app::updateParticles()
 			if (p.life > 0.0f) {
 
 				// Simulate simple physics : gravity only, no collisions
-				float gravity = -11.0f;//-9.81f;
+				float gravity = -9.81f;
 				p.speed += vmath::vec3(0.0f, gravity, 0.0f) * (float)deltaTime * 0.8f;
 				p.pos += p.speed * (float)deltaTime;
 				p.cameradistance = vmath::length(p.pos);
