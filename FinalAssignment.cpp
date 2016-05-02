@@ -163,7 +163,7 @@ protected:
 	int LastUsedParticle = 0;
 	int ParticlesCount = 0;
 
-	const int defaultMaxParticles = 501;
+	const int defaultMaxParticles = 701;
 	int MaxParticles = defaultMaxParticles;
 	Particle * Particles;
 
@@ -251,7 +251,7 @@ void final_app::startup()
 	texture_data = loadImageFromFile("bin\\media\\textures\\particle2.png", square_tex_width, square_tex_height);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
 																					  // Generate a name for the texture
-	glGenTextures(1, &tex_particle); //GLuint tex_floor
+	glGenTextures(1, &tex_particle);
 								  // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_particle);
 	// Specify the amount of storage we want to use for the texture
@@ -264,7 +264,7 @@ void final_app::startup()
 	// Enable the texture for OpenGL.
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
 																					  // Generate a name for the texture
-	glGenTextures(1, &tex_particle2); //GLuint tex_floor
+	glGenTextures(1, &tex_particle2); 
 									 // Now bind it to the context using the GL_TEXTURE_2D binding point
 	glBindTexture(GL_TEXTURE_2D, tex_particle2);
 	// Specify the amount of storage we want to use for the texture
@@ -699,10 +699,10 @@ void final_app::onKey(int key, int action)
 			lightPosOffset[2] -= 1;
 			break;
 		case 'Y':
-			spread -= 0.1;
+			spread -= 0.1f;
 			break;
 		case 'U':
-			spread += 0.1;
+			spread += 0.1f;
 			break;
 		case 'H':
 			if (MaxParticles > 1)
@@ -793,7 +793,7 @@ vmath::vec3 final_app::getArcballVector(int x, int y) {
 #pragma endregion
 
 
-#pragma particle functions
+#pragma region particle functions
 // Finds a Particle in ParticlesContainer which isn't used yet.
 // (i.e. life < 0);
 int final_app::FindUnusedParticle() {
@@ -830,7 +830,7 @@ void final_app::updateParticles()
 		if (p.life > 0.0f) {
 
 			// Decrease life
-			p.life -= deltaTime;
+			p.life -= (float) deltaTime;
 			if (p.life > 0.0f) {
 
 				// Simulate simple physics : gravity only, no collisions
