@@ -21,7 +21,7 @@ out VS_OUT
 } vs_out;
 
 void main(void)                              
-{                   
+{                  
 	//vec4 position = proj_matrix * mv_matrix * vec4(0.0, 0.0, 0.0, 1.0);
 	vec4 pos = proj_matrix * mv_matrix * position;
 	vs_out.color = uni_color;
