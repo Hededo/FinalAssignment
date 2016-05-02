@@ -260,7 +260,9 @@ void final_app::startup()
 	// Assume the texture is already bound to the GL_TEXTURE_2D target
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, *square_tex_width, *square_tex_height, GL_RGBA, GL_UNSIGNED_BYTE, &texture_data[0]);
 	//_______________________________________________________________________________________________________________
-	tex_skybox = sb7::ktx::file::load("bin\\media\\textures\\mountaincube.ktx");
+	//tex_skybox = sb7::ktx::file::load("bin\\media\\textures\\mountaincube.ktx");
+	tex_skybox = sb7::ktx::file::load("bin\\media\\textures\\cloudcube.ktx");
+
 	//_______________________________________________________________________________________________________________
 	texture_data = loadImageFromFile("bin\\media\\textures\\particle2.png", square_tex_width, square_tex_height);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_NEAREST = no smoothing
@@ -388,7 +390,7 @@ void final_app::render(double currentTime)
 
 #pragma endregion
 
-#pragma region Draw Room
+#pragma region Draw Skybox
 	cube->BindBuffers();
 
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -403,8 +405,10 @@ void final_app::render(double currentTime)
 	glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	vmath::mat4 model_matrix = vmath::scale(250.0f);
+	vmath::mat4 model_matrix = vmath::scale(256.0f);
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
@@ -560,7 +564,7 @@ void final_app::render(double currentTime)
 
 	model_matrix =
 		vmath::translate(0.0f, -30.0f, 0.0f) *
-		vmath::scale(40.0f, 1.0f, 40.0f);
+		vmath::scale(249.0f, 0.1f, 249.0f);
 	block->model_matrix = model_matrix;
 	block->mv_matrix = view_matrix * model_matrix;
 	block->view_matrix = view_matrix;
